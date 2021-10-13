@@ -33,7 +33,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
+// Authen function
 function auth(req,res,next){
 
   console.log(req.headers);
@@ -61,6 +61,7 @@ function auth(req,res,next){
     return next(err);
   }
 }
+//use authen function 
 app.use(auth);
 
 
