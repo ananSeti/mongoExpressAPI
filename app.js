@@ -39,14 +39,18 @@ app.use(express.urlencoded({ extended: false }));
  // app.use(cookieParser('1234567890')); // No use cookie ,use session instead
 
  app.use(session({
-   name:'session-d',
+   name:'session-id',
    secret:'12345-6789-09876-54321',
    saveUninitialized:false,
    resave:false,
    store:new FileStore()
  }));
-// Authen function
-function auth(req,res,next){
+ 
+ app.use('/', indexRouter);
+ app.use('/users', usersRouter);
+ 
+ // Authen function
+ function auth(req,res,next){
 
   console.log(req.headers);
   //Cookie
@@ -54,12 +58,12 @@ function auth(req,res,next){
      console.log(req.session);  
   if(!req.session.user){
    //if(!req.signedCookies.user){
-    console.log('...OK...');
+    console.log('...OK...app');
     var authHeader = req.headers.authorization;
+    
     if(!authHeader){
       console.log('!authHeader');
       var err = new Error('You are not authorizationed!');
-      res.setHeader('WWW-Authenticate','Basic');
       err.status = 401;
       return next(err);
     }
@@ -68,16 +72,16 @@ function auth(req,res,next){
     var username = auth[0];
     var password = auth[1];
   
-    if(username ==='admin' && password ==='password'){
+    if(req.session.use ==='authenticated' ){
       //aad cookie
       //res.cookie('user','admin',{signed:true})
-      req.session.user = 'admin';
+      //req.session.user = 'admin';
       next();
     }
     else{
       var err = new Error('You are not authorizationed!');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 401;
+      //res.setHeader('WWW-Authenticate','Basic');
+      err.status = 403;
       return next(err);
     }
   }
@@ -100,8 +104,7 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/dishes',dishRouter);
 app.use('/promotions',promoRouter);
 app.use('/leaders',leaderRouter);
