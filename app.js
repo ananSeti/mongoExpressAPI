@@ -5,6 +5,9 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session =require('express-session');
 var FileStore = require('session-file-store')(session);
+// use passport
+var passport = require('passport');
+var authenticate = require('./models/authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -45,7 +48,10 @@ app.use(express.urlencoded({ extended: false }));
    resave:false,
    store:new FileStore()
  }));
- 
+ //use passport
+ app.use(passport.initialize());
+ app.use(passport.session());
+
  app.use('/', indexRouter);
  app.use('/users', usersRouter);
  
@@ -56,23 +62,25 @@ app.use(express.urlencoded({ extended: false }));
   //Cookie
   // console.log(req.signedCookies);
      console.log(req.session);  
-  if(!req.session.user){
+   //if(!req.session.user){
    //if(!req.signedCookies.user){
+   //use passport 
+   if(!req.user){
     console.log('...OK...app');
-    var authHeader = req.headers.authorization;
+    //var authHeader = req.headers.authorization;
     
-    if(!authHeader){
+   // if(!authHeader){
       console.log('!authHeader');
       var err = new Error('You are not authorizationed!');
-      err.status = 401;
+      err.status = 403;
       return next(err);
     }
-     console.log('...OK.2..');
-    var auth = new Buffer.from(authHeader.split(' ')[1],'base64').toString().split(':');
-    var username = auth[0];
-    var password = auth[1];
+    // console.log('...OK.2..');
+    //var auth = new Buffer.from(authHeader.split(' ')[1],'base64').toString().split(':');
+    //var username = auth[0];
+    //var password = auth[1];
   
-    if(req.session.use ==='authenticated' ){
+    /* if(req.session.use ==='authenticated' ){
       //aad cookie
       //res.cookie('user','admin',{signed:true})
       //req.session.user = 'admin';
@@ -84,19 +92,14 @@ app.use(express.urlencoded({ extended: false }));
       err.status = 403;
       return next(err);
     }
-  }
+  } */
   else{
     //if(req.signedCookies.user ==='admin'){
-      if(req.session.user ==='admin'){
+     // if(req.session.user ==='admin'){
       next();
     }
-    else{
-      var err = new Error('You are not authorizationed!');
-      
-      err.status = 401;
-      return next(err);
-    }
-  }
+   
+  
 }
 //use authen function 
 app.use(auth);
