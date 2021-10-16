@@ -8,6 +8,8 @@ var FileStore = require('session-file-store')(session);
 // use passport
 var passport = require('passport');
 var authenticate = require('./models/authenticate');
+//TOKEN
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -21,7 +23,8 @@ const Dishes = require('./models/dishes');
 const promotions = require('./models/promotions');
 const leader = require('./models/leaders');
 
-const url ='mongodb://localhost:27017/confusion';
+//const url ='mongodb://localhost:27017/confusion';
+const url =config.mongoUrl;
 
 const connect = mongoose.connect(url);
 connect.then((db)=>{
@@ -41,20 +44,21 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser());
  // app.use(cookieParser('1234567890')); // No use cookie ,use session instead
 
- app.use(session({
+ /* app.use(session({
    name:'session-id',
    secret:'12345-6789-09876-54321',
    saveUninitialized:false,
    resave:false,
    store:new FileStore()
- }));
+ })); */
  //use passport
  app.use(passport.initialize());
- app.use(passport.session());
+ //app.use(passport.session());
 
  app.use('/', indexRouter);
  app.use('/users', usersRouter);
  
+ /* 
  // Authen function
  function auth(req,res,next){
 
@@ -92,7 +96,7 @@ app.use(express.urlencoded({ extended: false }));
       err.status = 403;
       return next(err);
     }
-  } */
+  } 
   else{
     //if(req.signedCookies.user ==='admin'){
      // if(req.session.user ==='admin'){
@@ -102,7 +106,7 @@ app.use(express.urlencoded({ extended: false }));
   
 }
 //use authen function 
-app.use(auth);
+app.use(auth); */
 
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -111,6 +115,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/dishes',dishRouter);
 app.use('/promotions',promoRouter);
 app.use('/leaders',leaderRouter);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
