@@ -15,8 +15,11 @@ const commentSchema = new Schema({
         required:true
     },
     author:{
-        type:String,
-        required:true
+        //เปลี่ยนเป็น poperate 
+        //type:String,
+        type:mongoose.Schema.Types.ObjectId,
+        //required:true
+        ref:'User'
     }
 },{
         timestamps:true

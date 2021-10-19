@@ -18,6 +18,8 @@ dishRouter.route('/')
 .get((req,res,next) => {
    // res.end('Will send all the dishes to you!');
     Dishes.find({})
+    //popurate
+    .populate('comments.author')
    .then((dishes)=>{
        res.status = 200;
        res.setHeader('Connect-Type','application/json');
@@ -27,7 +29,7 @@ dishRouter.route('/')
 })
 //.post((req, res, next) => {
  //add authen
- .post(authenticate.verifyUser,(req, res, next) => {  
+ .post(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {  
    // res.end('Will add the dish: ' + req.body.name + ' with details: ' + req.body.description);
    //console.log('Post....');
      Dishes.create(req.body)
@@ -39,11 +41,11 @@ dishRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.put(authenticate.verifyUser,(req, res, next) => {
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
    // res.end('Deleting all dishes');
    Dishes.remove({})
    .then((resp)=>{
@@ -63,6 +65,7 @@ dishRouter.route('/:dishId')
 .get((req,res,next) => {
     //res.end('Will send the dishe ' + req.params.dishId + ' to you!');
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish)=>{
        res.status = 200;
        res.setHeader('Connect-Type','application/json');
@@ -70,11 +73,11 @@ dishRouter.route('/:dishId')
    },(err)=>next(err))
    .catch((err)=>next(err));
 })
-.post( authenticate.verifyUser,(req, res, next) => {
+.post( authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
   res.statusCode = 403;
   res.end('POST operation not supported on /dishes/'+ req.params.dishId);
 })
-.put(authenticate.verifyUser,(req, res, next) => {
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
   /* res.write('Updating the dish: ' + req.params.dishId + '\n');
   res.end('Will update the dish: ' + req.body.name + 
         ' with details: ' + req.body.description); */
@@ -88,7 +91,7 @@ dishRouter.route('/:dishId')
 },(err)=>next(err))
 .catch((err)=>next(err));   
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
    // res.end('Deleting dish: ' + req.params.dishId);
    Dishes.findByIdAndRemove(req.params.dishId)
    .then((resp)=>{
@@ -110,6 +113,7 @@ dishRouter.route('/:dishId')
    // res.end('Will send all the dishes to you!');
    console.log('****************');
    Dishes.findById(req.params.dishId)
+   .populate('comments.author')
    .then((dish)=>{
        if(dish !=null){
         res.status = 200;
@@ -131,13 +135,20 @@ dishRouter.route('/:dishId')
       Dishes.findById(req.params.dishId)
      .then((dish) => {
         if(dish !=null){
-            
+            //populate
+            req.body.author = req.user._id;
             dish.comments.push(req.body);
             dish.save()
             .then((dish)=>{
-                res.status = 200;
-                res.setHeader('Connect-Type','application/json');
-                res.json(dish);
+                //poperate
+                Dishes.findById(dish._id)
+                    .populate('comments.author')
+                    .then((dish)=>{
+                        res.status = 200;
+                        res.setHeader('Connect-Type','application/json');
+                        res.json(dish);
+                    })
+               
             },(err) => next(err));
            
            }
@@ -154,7 +165,7 @@ dishRouter.route('/:dishId')
     res.end('PUT operation not supported on /dishes/' 
     + req.params.dishId + '/comments');
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
    // res.end('Deleting all dishes');
    console.log('Delete  comment...')
    Dishes.findById(req.params.dishId)
@@ -188,6 +199,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 .get((req,res,next) => {
     //res.end('Will send the dishe ' + req.params.dishId + ' to you!');
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish)=>{
         if(dish !=null && dish.comments.id(req.params.commentId) != null){
             res.status = 200;
@@ -213,21 +225,26 @@ dishRouter.route('/:dishId/comments/:commentId')
   + '/comment/' + req.params.commentId);
 })
 .put(authenticate.verifyUser,(req, res, next) => {
-    console.log('xxxxxxxxxxxxxxx');
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
         if(dish !=null && dish.comments.id(req.params.commentId )!= null){
             if(req.body.rating){
-                dish.comments.id(req.params.commentId ).rating = reg.body.rating;  
+                dish.comments.id(req.params.commentId ).rating = req.body.rating;  
             }   
             if(req.body.comment){
-                dish.comments.id(req.params.commentId ).commentId = reg.body.comment;  
+                dish.comments.id(req.params.commentId ).commentId = req.body.comment;  
             }       
             dish.save()
             .then((dish)=>{
-                res.status = 200;
-                res.setHeader('Connect-Type','application/json');
-                res.json(dish);
+                //poperate
+                 Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish)=>{
+                    res.status = 200;
+                    res.setHeader('Connect-Type','application/json');
+                    res.json(dish);
+                })
+               
             },(err) => next(err));
            
            }
@@ -248,14 +265,19 @@ dishRouter.route('/:dishId/comments/:commentId')
     console.log('Delete all comment...')
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
-        console.log('Check OK have Disk..');
+        console.log('Check OK have Dish..');
         if(dish !=null  && dish.comments.id(req.params.commentId )!= null){
              dish.comments.id(req.params.commentId).remove();
              dish.save()
             .then((dish)=>{
-                res.status = 200;
-                res.setHeader('Connect-Type','application/json');
-                res.json(dish);
+                //poperate
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish)=>{
+                    res.status = 200;
+                    res.setHeader('Connect-Type','application/json');
+                    res.json(dish);
+                })
             },(err) => next(err));
            }
             else if(dish == null){
